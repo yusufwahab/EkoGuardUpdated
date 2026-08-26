@@ -1,111 +1,114 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* Class-based dark mode (toggled by ThemeProvider), not just prefers-color-scheme. */
+@custom-variant dark (&:is(.dark *));
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/*
+ * EkoGuard design system tokens.
+ * Tailwind v4 is CSS-first - there is no tailwind.config.js. Every
+ * --color and --font variable below becomes a real utility automatically
+ * (e.g. --color-eco-600 generates bg-eco-600, text-eco-600, border-eco-600).
+ */
+@theme {
+  /* Typography pairing: geometric display font for headings, highly
+     readable body font for everything else. */
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* Primary eco/tech brand scale. */
+  --color-eco-50: #eefdf3;
+  --color-eco-100: #d7f9e2;
+  --color-eco-200: #b1f1c8;
+  --color-eco-300: #7ee3a8;
+  --color-eco-400: #47cd84;
+  --color-eco-500: #22b467;
+  --color-eco-600: #16a34a;
+  --color-eco-700: #12803c;
+  --color-eco-800: #126532;
+  --color-eco-900: #11532b;
+  --color-eco-950: #052e16;
+
+  /* Dark-mode-friendly neutral scale ("ink"), used for text/surfaces
+     instead of raw Tailwind grays so light and dark share one ramp. */
+  --color-ink-0: #ffffff;
+  --color-ink-50: #f6f8f7;
+  --color-ink-100: #eaeef0;
+  --color-ink-200: #d3dbd7;
+  --color-ink-300: #aebab2;
+  --color-ink-400: #83958a;
+  --color-ink-500: #64796d;
+  --color-ink-600: #4d5f55;
+  --color-ink-700: #3c4a42;
+  --color-ink-800: #263029;
+  --color-ink-900: #16201a;
+  --color-ink-950: #0b120e;
+
+  /* Semantic status colors. */
+  --color-status-online: var(--color-eco-500);
+  --color-status-offline: #94a3b8;
+  --color-status-cloud: #38bdf8;
+
+  --color-fill-low: #22b467;
+  --color-fill-medium: #eab308;
+  --color-fill-high: #f97316;
+  --color-fill-full: #ef4444;
+
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #0284c7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+/* Base surfaces - plain CSS (not @apply) so this doesn't depend on Tailwind's
+   at-build-time utility expansion, which this pipeline does not run for
+   hand-written CSS outside of class="" scanning. */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
 }
 
 body {
-  margin: 0;
+  background-color: var(--color-ink-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+.dark body {
+  background-color: var(--color-ink-950);
+  color: var(--color-ink-50);
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+/* Keyboard-visible focus ring everywhere, without an outline on mouse click. */
+:focus-visible {
+  outline: 2px solid var(--color-eco-500);
+  outline-offset: 2px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+.skeleton-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
   }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }

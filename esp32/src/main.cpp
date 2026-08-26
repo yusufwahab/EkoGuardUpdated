@@ -1,99 +1,54 @@
 #include <Arduino.h>
+#include <ESPmDNS.h>
 
-// Individual Pin Definitions for 4 Ultrasonic Sensors
-// Sensor 1
-const int TRIG_1 = 13;
-const int ECHO_1 = 14;
-
-// Sensor 2
-const int TRIG_2 = 16;
-const int ECHO_2 = 17;
-
-// Sensor 3
-const int TRIG_3 = 18;
-const int ECHO_3 = 19;
-
-// Sensor 4
-const int TRIG_4 = 21;
-const int ECHO_4 = 22;
-
-// Function to measure distance for a specific sensor (in cm)
-float readDistanceCM(int trigPin, int echoPin) {
-  // Ensure Trigger is clear
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  
-  // Send 10 microsecond HIGH pulse
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-
-  // Measure pulse duration (timeout set to 30ms for ~5m max range)
-  long duration = pulseIn(echoPin, HIGH, 30000);
-
-  // Calculate distance in cm (Speed of sound = 0.0343 cm/us)
-  if (duration == 0) {
-    return -1.0; // Out of range or no echo detected
-  }
-  return (duration * 0.0343) / 2.0;
-}
+#include "config.h"
+#include "state.h"
+#include "sensors.h"
+#include "network.h"
+#include "timesync.h"
+#include "api.h"
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("\n--- EkoGuard smart bin booting ---");
 
-  // Configure Sensor 1 Pins
-  pinMode(TRIG_1, OUTPUT);
-  pinMode(ECHO_1, INPUT);
-  digitalWrite(TRIG_1, LOW);
+  sensorsSetup();
+  // networkSetup() must run first: if it falls back to AP mode it registers
+  // its own "/" captive-portal handler on `server`, which needs to win over
+  // apiSetup()'s "/" status page handler registered afterward.
+  networkSetup();  // connects STA, or adds the AP captive-portal routes to `server`
+  apiSetup();      // register /api/* + /ws routes on `server`
+  server.begin();
 
-  // Configure Sensor 2 Pins
-  pinMode(TRIG_2, OUTPUT);
-  pinMode(ECHO_2, INPUT);
-  digitalWrite(TRIG_2, LOW);
-
-  // Configure Sensor 3 Pins
-  pinMode(TRIG_3, OUTPUT);
-  pinMode(ECHO_3, INPUT);
-  digitalWrite(TRIG_3, LOW);
-
-  // Configure Sensor 4 Pins
-  pinMode(TRIG_4, OUTPUT);
-  pinMode(ECHO_4, INPUT);
-  digitalWrite(TRIG_4, LOW);
-
-  Serial.println("--- 4 Ultrasonic Sensors Initialized ---");
+  if (isNetworkReady()) {
+    timeSetup();
+    if (MDNS.begin(getDeviceId().c_str())) {
+      Serial.printf("[mdns] reachable at http://%s.local\n", getDeviceId().c_str());
+      MDNS.addService("http", "tcp", 80);
+    }
+    Serial.printf("[net] device id: %s\n", getDeviceId().c_str());
+  } else {
+    Serial.println("[net] in AP config mode - device is not yet on the local network");
+  }
 }
 
 void loop() {
-  Serial.println("\n----------------------------------");
-  
-  // Reading Sensor 1
-  float dist1 = readDistanceCM(TRIG_1, ECHO_1);
-  Serial.print("Sensor 1: ");
-  if (dist1 < 0) Serial.println("Out of range / No echo");
-  else { Serial.print(dist1, 2); Serial.println(" cm"); }
-  delay(50); // Delay between sensor readings to avoid ultrasonic crosstalk
+  networkLoop(); // pumps the captive-portal DNS server while in AP mode
+  ws.cleanupClients();
 
-  // Reading Sensor 2
-  float dist2 = readDistanceCM(TRIG_2, ECHO_2);
-  Serial.print("Sensor 2: ");
-  if (dist2 < 0) Serial.println("Out of range / No echo");
-  else { Serial.print(dist2, 2); Serial.println(" cm"); }
-  delay(50);
+  static unsigned long lastSensorRead = 0;
+  if (millis() - lastSensorRead >= SENSOR_READ_INTERVAL_MS) {
+    lastSensorRead = millis();
+    if (isNetworkReady()) {
+      updateDeviceState();
+    }
+  }
 
-  // Reading Sensor 3
-  float dist3 = readDistanceCM(TRIG_3, ECHO_3);
-  Serial.print("Sensor 3: ");
-  if (dist3 < 0) Serial.println("Out of range / No echo");
-  else { Serial.print(dist3, 2); Serial.println(" cm"); }
-  delay(50);
-
-  // Reading Sensor 4
-  float dist4 = readDistanceCM(TRIG_4, ECHO_4);
-  Serial.print("Sensor 4: ");
-  if (dist4 < 0) Serial.println("Out of range / No echo");
-  else { Serial.print(dist4, 2); Serial.println(" cm"); }
-  
-  // Full scan pause
-  delay(500);
+  static unsigned long lastBroadcast = 0;
+  if (millis() - lastBroadcast >= WS_BROADCAST_INTERVAL_MS) {
+    lastBroadcast = millis();
+    if (isNetworkReady()) {
+      apiBroadcastState();
+    }
+  }
 }
