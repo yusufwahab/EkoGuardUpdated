@@ -1,29 +1,32 @@
 // Mirrors the real ESP32 firmware contract documented in docs/device-api.md.
-// Keep this in sync with esp32/src/api.cpp - it is the source of truth.
+// Keep this in sync with esp32/src/api_wifi.cpp - it is the source of truth.
 
 export type DeviceMode = "automatic" | "manual";
 
 /** GET /api/status on the device */
 export interface DeviceStatus {
   online: boolean;
-  fillLevel: number; // 0-100, or -1 if unknown
+  /** Always exactly -1 (unknown), 0, 25, 50, 75, or 100 - the 4 side-mounted
+   *  tripwire sensors report discrete milestones, not a continuous value. */
+  fillLevel: number;
   distanceCm: number;
   fan: boolean;
   mode: DeviceMode;
 }
 
-export interface SensorReading {
-  id: number;
+/** One of the 4 side-mounted tripwire sensors, bottom (25%) to top (100%). */
+export interface TierReading {
+  percent: 25 | 50 | 75 | 100;
   distanceCm: number;
+  tripped: boolean;
   ok: boolean;
 }
 
 /** GET /api/sensors on the device */
 export interface DeviceSensors {
-  sensors: SensorReading[];
-  sensorsOkCount: number;
-  distanceCm: number;
+  tiers: TierReading[];
   fillLevel: number;
+  distanceCm: number;
 }
 
 /** Pushed over the device's WebSocket (ws://<device>/ws) */

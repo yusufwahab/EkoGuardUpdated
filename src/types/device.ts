@@ -14,7 +14,9 @@ export interface DeviceSnapshot {
   /** The device's own local address, e.g. "http://esp32-a1b2c3.local" - lets
    *  the frontend talk to it directly instead of through the backend. */
   baseUrl: string;
-  fillLevel: number; // 0-100, or -1 if unknown
+  /** Always exactly -1 (unknown), 0, 25, 50, 75, or 100 - the 4 side-mounted
+   *  tripwire sensors report discrete milestones, not a continuous value. */
+  fillLevel: number;
   distanceCm: number;
   fan: boolean;
   mode: DeviceMode;
@@ -28,6 +30,7 @@ export interface DeviceSnapshot {
 /** GET /api/status on the device itself (raw firmware shape, no name/location/connection). */
 export interface RawDeviceStatus {
   online: boolean;
+  /** Always exactly -1, 0, 25, 50, 75, or 100 (see DeviceSnapshot). */
   fillLevel: number;
   distanceCm: number;
   fan: boolean;
@@ -44,17 +47,18 @@ export interface RawDeviceLivePayload {
   timestamp: string | null;
 }
 
-export interface SensorReading {
-  id: number;
+/** One of the 4 side-mounted tripwire sensors, bottom (25%) to top (100%). */
+export interface TierReading {
+  percent: 25 | 50 | 75 | 100;
   distanceCm: number;
+  tripped: boolean;
   ok: boolean;
 }
 
 export interface DeviceSensors {
-  sensors: SensorReading[];
-  sensorsOkCount: number;
-  distanceCm: number;
+  tiers: TierReading[];
   fillLevel: number;
+  distanceCm: number;
 }
 
 export interface ReadingPoint {

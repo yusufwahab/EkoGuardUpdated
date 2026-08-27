@@ -2,11 +2,7 @@
 #include <ESPmDNS.h>
 
 #include "config.h"
-#include "state.h"
-#include "sensors.h"
-#include "network.h"
-#include "timesync.h"
-#include "api.h"
+#include "api_wifi.h"
 
 void setup() {
   Serial.begin(115200);

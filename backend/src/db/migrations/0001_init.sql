@@ -10,7 +10,10 @@ create table if not exists devices (
   name text not null default 'Unnamed bin',
   location text,
   base_url text not null,                        -- e.g. http://esp32-a1b2c3.local
-  fill_alert_threshold int not null default 85 check (fill_alert_threshold between 1 and 100),
+  -- 75, not 85: the firmware's fillLevel only ever reports 0/25/50/75/100
+  -- (4 discrete tripwire tiers, not a continuous reading - see
+  -- docs/device-api.md), so a threshold between two tiers would never fire.
+  fill_alert_threshold int not null default 75 check (fill_alert_threshold between 1 and 100),
   fan_max_runtime_minutes int not null default 120 check (fan_max_runtime_minutes > 0),
   created_at timestamptz not null default now()
 );
