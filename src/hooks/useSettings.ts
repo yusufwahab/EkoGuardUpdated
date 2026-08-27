@@ -10,7 +10,7 @@ export function useDeviceSettings(deviceId: string) {
   });
 }
 
-type SettingsPatch = Partial<Pick<DeviceSettings, "name" | "location" | "fill_alert_threshold" | "fan_max_runtime_minutes">>;
+type SettingsPatch = Partial<Pick<DeviceSettings, "name" | "location" | "base_url" | "fill_alert_threshold" | "fan_max_runtime_minutes">>;
 
 export function useUpdateSettings(deviceId: string) {
   const queryClient = useQueryClient();

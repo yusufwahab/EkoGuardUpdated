@@ -26,6 +26,7 @@ const settingsPatch = z
   .object({
     name: z.string().min(1).max(80),
     location: z.string().max(160).nullable(),
+    base_url: z.string().url(),
     fill_alert_threshold: z.number().int().min(1).max(100),
     fan_max_runtime_minutes: z.number().int().min(1).max(1440),
   })

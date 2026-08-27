@@ -36,6 +36,7 @@ function SettingsFields({ device, deviceId }: { device: DeviceSettings; deviceId
 
   const [name, setName] = useState(device.name);
   const [location, setLocation] = useState(device.location ?? "");
+  const [baseUrl, setBaseUrl] = useState(device.base_url);
   const [threshold, setThreshold] = useState(device.fill_alert_threshold);
   const [maxRuntime, setMaxRuntime] = useState(device.fan_max_runtime_minutes);
 
@@ -45,6 +46,7 @@ function SettingsFields({ device, deviceId }: { device: DeviceSettings; deviceId
       const result = await update.mutateAsync({
         name,
         location: location.trim() === "" ? null : location,
+        base_url: baseUrl,
         fill_alert_threshold: threshold,
         fan_max_runtime_minutes: maxRuntime,
       });
@@ -74,8 +76,17 @@ function SettingsFields({ device, deviceId }: { device: DeviceSettings; deviceId
           <Field label="Device ID">
             <input className={`${inputClasses} opacity-60`} value={device.id} disabled />
           </Field>
-          <Field label="Address" hint="Set via DEVICE_BASE_URL / the devices table on the backend.">
-            <input className={`${inputClasses} opacity-60`} value={device.base_url} disabled />
+          <Field
+            label="Address"
+            hint="The device's local address (mDNS name or IP) - printed to serial at boot. The frontend talks to this directly; only falls back through the backend if it's unreachable."
+          >
+            <input
+              className={inputClasses}
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="http://esp32-a1b2c3.local"
+              required
+            />
           </Field>
         </CardBody>
       </Card>

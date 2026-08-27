@@ -27,10 +27,19 @@ class DeviceConnection {
   private wasOnline = false;
   private prevFan: boolean | null = null;
   private prevMode: DeviceMode | null = null;
-  private client: DeviceClient;
 
-  constructor(private device: DeviceRecord) {
-    this.client = new DeviceClient(device.base_url);
+  constructor(private deviceId: string) {}
+
+  // Always reads the registry fresh rather than caching a DeviceRecord at
+  // construction time: deviceRegistry.patch() (PATCH /settings) replaces
+  // the map entry with a new object rather than mutating in place, so a
+  // cached reference would never see an edited base_url, alert threshold,
+  // fan runtime limit, name, or location - this connection would keep
+  // working against stale data until the backend restarted.
+  private get device(): DeviceRecord {
+    const device = deviceRegistry.get(this.deviceId);
+    if (!device) throw new Error(`Device "${this.deviceId}" was removed from the registry`);
+    return device;
   }
 
   start() {
@@ -46,7 +55,7 @@ class DeviceConnection {
   private connectWs() {
     let socket: WebSocket;
     try {
-      socket = new WebSocket(this.client.wsUrl);
+      socket = new WebSocket(new DeviceClient(this.device.base_url).wsUrl);
     } catch {
       this.scheduleReconnect();
       return;
@@ -87,7 +96,7 @@ class DeviceConnection {
     if (this.pollTimer) return;
     this.pollTimer = setInterval(async () => {
       try {
-        const status = await this.client.getStatus();
+        const status = await new DeviceClient(this.device.base_url).getStatus();
         this.handleLivePayload({
           deviceId: this.device.id,
           fillLevel: status.fillLevel,
@@ -185,7 +194,7 @@ const connections: DeviceConnection[] = [];
 
 export function startDevicePolling() {
   for (const device of deviceRegistry.list()) {
-    const conn = new DeviceConnection(device);
+    const conn = new DeviceConnection(device.id);
     connections.push(conn);
     conn.start();
   }

@@ -50,7 +50,7 @@ export const api = {
 
   getSettings: (deviceId: string) => request<{ device: DeviceSettings }>(`/api/devices/${deviceId}/settings`),
 
-  updateSettings: (deviceId: string, changes: Partial<Pick<DeviceSettings, "name" | "location" | "fill_alert_threshold" | "fan_max_runtime_minutes">>) =>
+  updateSettings: (deviceId: string, changes: Partial<Pick<DeviceSettings, "name" | "location" | "base_url" | "fill_alert_threshold" | "fan_max_runtime_minutes">>) =>
     request<{ device: DeviceSettings; warning?: string }>(`/api/devices/${deviceId}/settings`, {
       method: "PATCH",
       body: JSON.stringify(changes),
